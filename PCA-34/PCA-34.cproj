@@ -139,6 +139,18 @@
     <Compile Include="avr_compiler.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="board.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="board.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ina226.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ina226.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="lcd_screen.c">
       <SubType>compile</SubType>
     </Compile>
@@ -146,6 +158,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="twi_master_driver.c">

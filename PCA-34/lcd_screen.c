@@ -67,7 +67,7 @@ void setCursor(uint8_t line_num, uint8_t x)
 {
 	if (line_num == 0)
 	{
-		lcd_command(SET_DDRAM_ADDRESS | (0b0000000000 & x));
+		lcd_command(SET_DDRAM_ADDRESS | (0b0000000000 + x));
 	}
 	else if (line_num == 1)
 	{
@@ -178,42 +178,69 @@ void load_custom_characters()
 	
 	// 1 bar
 	lcd_command(SET_CGRAM_ADDRESS);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000010000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	//2 bar
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	//3 bar
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011100);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	//4 bar
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
-	lcd_command(WRITE_DATA_TO_RAM | 0b0000011110);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
 	//5 bar
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	//10th bar
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000001);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000001);
+	lcd_command(WRITE_DATA_TO_RAM | 0b0000000000);
+	//max current bar
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000000001);
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000000001);
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000000001);
+	//lcd_command(WRITE_DATA_TO_RAM | 0b0000000001);
+	//max current bar
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
 	lcd_command(WRITE_DATA_TO_RAM | 0b0000011111);
