@@ -65,11 +65,19 @@ void initialize()
 	encoder_val = read_gray_code_from_encoder();
 	encoder_val_tmp = 0;
 	
-	current = 0;
-	voltage = 0;
-	update  = TRUE;
-	rtc_counter = 0;
-	rtc_counter_prev = 0;
+	desired_current     = 0;
+	current             = 0;
+	temp_current        = 0;
+	voltage             = 0;
+	temp_voltage        = 0;
+	update              = TRUE;
+	set_current_mode    = FALSE;
+	rtc_idle_counter    = 0;
+	rtc_counter         = 0;
+	rtc_counter_1_4     = FALSE;
+	rtc_counter_1_2     = FALSE;
+	rtc_counter_prev    = 0;
+	set_current_blink   = FALSE;
 }
 
 
@@ -125,6 +133,62 @@ void display_current_voltage(uint16_t current, uint16_t voltage)
 	
 	length = snprintf(NULL, 0, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
 	str = malloc(length + 1);
+	snprintf(str, length + 1, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
+	lcd_write(str);
+	free(str);
+	
+	voltage = (voltage + 50) / 100; // round to nearest hundred and get hundreds
+	
+	full_bars = voltage / 5;
+	last_bar  = voltage % 5;
+	
+	for(int i = 0; i < full_bars; i++)
+	{
+		if (i >= ((MAX_VOLTAGE + 50) / 100) / 5 - 1 && voltage >= (MAX_VOLTAGE + 50) / 100)
+		{
+			display_custom_character(6);
+			if (last_bar != 0)
+			{
+				display_custom_character(6);
+				last_bar = 0;
+			}
+		}
+		else
+		{
+			if ((i + 1) % 2 == 0)
+			{
+				display_custom_character(5);
+			}
+			else
+			{
+				display_custom_character(4);
+			}
+		}
+	}
+	
+	if (last_bar != 0)
+	{
+		display_custom_character(last_bar - 1);
+	}
+}
+
+void display_voltage(uint16_t voltage)
+{
+	lcd_command(CLEAR_DISPLAY);
+	lcd_command(FUNCTION_SET | 0b0000111000);
+	
+	uint8_t full_bars;
+	uint8_t last_bar;
+	
+	setCursor(1, 0);
+	
+	if (voltage > 7000)
+	{
+		voltage = 7000;
+	}
+	
+	int length = snprintf(NULL, 0, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
+	char* str = malloc(length + 1);
 	snprintf(str, length + 1, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
 	lcd_write(str);
 	free(str);
@@ -254,6 +318,7 @@ void handle_encoder()
 {
 	encoder_val_tmp = read_gray_code_from_encoder();
 	
+	current = (current / 10) * 10;
 
 	if(encoder_val != encoder_val_tmp)
 	{
