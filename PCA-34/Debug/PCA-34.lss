@@ -666,8 +666,8 @@ void display_current_voltage(uint16_t current, uint16_t voltage)
      3f8:	40 93 d0 38 	sts	0x38D0, r20	; 0x8038d0 <lcd_col_counter>
 	}
 	
-	for (int i = full_bars; i < 20; i++)
-     3fc:	84 31       	cpi	r24, 0x14	; 20
+	for (int i = full_bars; i < 16; i++)
+     3fc:	80 31       	cpi	r24, 0x10	; 16
      3fe:	91 05       	cpc	r25, r1
      400:	c4 f4       	brge	.+48     	; 0x432 <__LOCK_REGION_LENGTH__+0x32>
 	{
@@ -694,10 +694,10 @@ void display_current_voltage(uint16_t current, uint16_t voltage)
 		lcd_col_counter++;
 	}
 	
-	for (int i = full_bars; i < 20; i++)
+	for (int i = full_bars; i < 16; i++)
      428:	01 96       	adiw	r24, 0x01	; 1
      42a:	2f 5f       	subi	r18, 0xFF	; 255
-     42c:	84 31       	cpi	r24, 0x14	; 20
+     42c:	80 31       	cpi	r24, 0x10	; 16
      42e:	91 05       	cpc	r25, r1
      430:	91 f7       	brne	.-28     	; 0x416 <__LOCK_REGION_LENGTH__+0x16>
 		lcd_screen_update[lcd_row_counter][lcd_col_counter] = ' ';

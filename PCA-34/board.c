@@ -157,7 +157,7 @@ void display_current_voltage(uint16_t current, uint16_t voltage)
 		lcd_col_counter++;
 	}
 	
-	for (int i = full_bars; i < 20; i++)
+	for (int i = full_bars; i < 16; i++)
 	{
 		lcd_screen_update[lcd_row_counter][lcd_col_counter] = ' ';
 		lcd_col_counter++;
