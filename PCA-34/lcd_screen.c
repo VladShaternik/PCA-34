@@ -7,6 +7,8 @@
 
 #include "lcd_screen.h"
 
+volatile bool two_line_mode = true;
+
 void initialize_Screen()
 {
 	_delay_ms(50);
@@ -17,7 +19,7 @@ void initialize_Screen()
 	TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, message, 2);
 	while(twiMaster.status == 1);
 	_delay_ms(10);
-	if (twiMaster.result == TWIM_RESULT_NACK_RECEIVED)
+	while (twiMaster.result != TWIM_RESULT_OK)
 	{
 		initialize_Screen();
 		return;
@@ -28,7 +30,7 @@ void initialize_Screen()
 	TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, message, 2);
 	while(twiMaster.status == 1);
 	_delay_ms(10);
-	if (twiMaster.result == TWIM_RESULT_NACK_RECEIVED)
+	while (twiMaster.result != TWIM_RESULT_OK)
 	{
 		initialize_Screen();
 		return;
@@ -45,7 +47,7 @@ void initialize_Screen()
 	TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, message, 8);
 	while(twiMaster.status == 1);
 	_delay_ms(100);
-	if (twiMaster.result == TWIM_RESULT_NACK_RECEIVED)
+	while (twiMaster.result != TWIM_RESULT_OK)
 	{
 		initialize_Screen();
 		return;
@@ -53,15 +55,59 @@ void initialize_Screen()
 	
 	_delay_ms(50);
 	load_custom_characters();
+	
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 20; j++)
+		{
+			lcd_screen[i][j] = ' ';
+		}
+	}
+	
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 20; j++)
+		{
+			lcd_screen_update[i][j] = ' ';
+		}
+	}
+	
+	lcd_row_counter = 0;
+	lcd_col_counter = 0;
+	
+	if (two_line_mode)
+	{
+		lcd_command(CLEAR_DISPLAY);
+		lcd_command(FUNCTION_SET | 0b0000111000);
+	}
+	else
+	{
+		lcd_command(CLEAR_DISPLAY);
+		lcd_command(FUNCTION_SET | 0b0000111100);
+	}
 }
 
-// Driver DDRAM addressing
-const uint8_t dram_dispAddr [][3] =
+void clear_lcd_update()
 {
-	{ 0x00, 0x00, 0x00 },  // One line display address
-	{ 0x00, 0x40, 0x00 },  // Two line display address
-	{ 0x00, 0x10, 0x20 }   // Three line display address
-};
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 20; j++)
+		{
+			lcd_screen[i][j] = ' ';
+		}
+	}
+	
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 20; j++)
+		{
+			lcd_screen_update[i][j] = ' ';
+		}
+	}
+	
+	lcd_row_counter = 0;
+	lcd_col_counter = 0;
+}
 
 void setCursor(uint8_t line_num, uint8_t x)
 {
@@ -82,7 +128,7 @@ void lcd_write(char *message)
 	
 	complete_message[0] = (0x40);			//Control bit with R/S set high and continuous bytes
 	
-	for(unsigned char i = 0; i < size; i ++)
+	for(unsigned char i = 0; i < size; i++)
 	{
 		complete_message[i + 1] = message[i];
 	}
@@ -91,17 +137,15 @@ void lcd_write(char *message)
 	while(twiMaster.status == 1);
 	_delay_ms(10);
 	
-	while (twiMaster.result == TWIM_RESULT_NACK_RECEIVED)
+	while (twiMaster.result != TWIM_RESULT_OK)
 	{
 		initialize_Screen();
-		TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, complete_message, size + 1);
-		while(twiMaster.status == 1);
-		_delay_ms(10);
+		lcd_write(message);
 	}
 }
 
 
-void display_custom_character(uint8_t car_num)
+void display_character(uint8_t car_num)
 {
 	unsigned char complete_message[2];
 	complete_message[0] = (0x40);			//Control bit with R/S set high and continuous bytes
@@ -111,7 +155,7 @@ void display_custom_character(uint8_t car_num)
 	while(twiMaster.status == 1);
 	_delay_ms(10);
 	
-	while (twiMaster.result == TWIM_RESULT_NACK_RECEIVED)
+	while (twiMaster.result != TWIM_RESULT_OK)
 	{
 		initialize_Screen();
 		TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, complete_message, 2);
@@ -150,12 +194,21 @@ void lcd_command(uint16_t command)
 	while(twiMaster.status == 1);
 	_delay_ms(10);
 	
-	while (twiMaster.result == TWIM_RESULT_NACK_RECEIVED)
+	while (twiMaster.result != TWIM_RESULT_OK)
 	{
 		initialize_Screen();
 		TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, complete_message, 2);
 		while(twiMaster.status == 1);
 		_delay_ms(10);
+	}
+	
+	if (command == (FUNCTION_SET | 0b0000111100))
+	{
+		two_line_mode = false;
+	}
+	else if (command == (FUNCTION_SET | 0b0000111000))
+	{
+		two_line_mode = true;
 	}
 }
 
@@ -168,7 +221,7 @@ void load_custom_characters()
 	TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, message, 2);
 	while(twiMaster.status == 1);
 	_delay_ms(10);
-	while (twiMaster.result == TWIM_RESULT_NACK_RECEIVED)
+	while (twiMaster.result != TWIM_RESULT_OK)
 	{
 		initialize_Screen();
 		TWI_MasterWrite(&twiMaster, LCD_SLAVE_ADDRESS, message, 2);

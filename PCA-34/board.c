@@ -65,175 +65,233 @@ void initialize()
 	encoder_val = read_gray_code_from_encoder();
 	encoder_val_tmp = 0;
 	
-	desired_current     = 0;
-	current             = 0;
-	temp_current        = 0;
-	voltage             = 0;
-	temp_voltage        = 0;
-	update              = TRUE;
-	set_current_mode    = FALSE;
-	rtc_idle_counter    = 0;
-	rtc_counter         = 0;
-	rtc_counter_1_4     = FALSE;
-	rtc_counter_1_2     = FALSE;
-	rtc_counter_prev    = 0;
-	set_current_blink   = FALSE;
+	current              = 0;
+	temp_current         = 0;
+	voltage              = 0;
+	temp_voltage         = 0;
+	update               = TRUE;
+	set_current_mode     = FALSE;
+	set_current_mode_on  = 0;
+	rtc_idle_counter     = 0;
+	rtc_counter          = 0;
+	rtc_counter_1_4      = FALSE;
+	rtc_counter_1_2      = FALSE;
+	rtc_counter_prev     = 0;
+	encoder_sw_was_low   = FALSE;
+	
+	desired_current = eeprom_read_word((uint16_t*) 0x00);
+	
+	if (desired_current < 0 || desired_current > MAX_CURRENT)
+	{
+		desired_current = 0;
+		eeprom_update_word((uint16_t*) 0x00, desired_current);
+	}
+	
+	desired_current_temp = desired_current;
 }
 
-
-void display_current_voltage(uint16_t current, uint16_t voltage)
+void display_current_voltage(uint16_t cur, uint16_t vol)
 {
-	lcd_command(CLEAR_DISPLAY);
-	lcd_command(FUNCTION_SET | 0b0000111000);
+	lcd_col_counter = 0;
+	lcd_row_counter = 0;
 	
-	int length = snprintf(NULL, 0, "%02d.%dA ", current / 100, current / 10 % 10);
+	
+	// START writing voltage number in format %02d.%dV
+	
+	if (vol > 7000)
+	{
+		vol = 7000;
+	}
+	
+	int length = snprintf(NULL, 0, "%02d.%dV ", vol / 100, vol / 10 % 10);
 	char* str = malloc(length + 1);
-	snprintf(str, length + 1, "%02d.%dA ", current / 100, current / 10 % 10);
-	lcd_write(str);
+	snprintf(str, length + 1, "%02d.%dV ", vol / 100, vol / 10 % 10);
+	
+	for(unsigned char i = 0; i < length; i++)
+	{
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = str[i];
+		lcd_col_counter++;
+	}
+	
 	free(str);
 	
-	current = (current + 5) / 10; // round to nearest tenth and get tenth
+	vol = (vol + 50) / 100; // round to nearest hundred and get hundreds
 	
-	uint8_t full_bars;
-	uint8_t last_bar;
-	
-	full_bars = current / 25;
-	last_bar  = (current % 25) / 5;
+	uint8_t full_bars = vol / 5;
+	uint8_t last_bar  = vol % 5;
 	
 	for(int i = 0; i < full_bars; i++)
 	{
-		if (i == full_bars - 1 && current == (MAX_CURRENT + 5) / 10)
+		if (i >= ((MAX_VOLTAGE + 50) / 100) / 5 - 1 && vol >= (MAX_VOLTAGE + 50) / 100)
 		{
-			display_custom_character(6);
+			lcd_screen_update[lcd_row_counter][lcd_col_counter] = 6;
+			lcd_col_counter++;
+			if (last_bar != 0)
+			{
+				lcd_screen_update[lcd_row_counter][lcd_col_counter] = 6;
+				lcd_col_counter++;
+				last_bar = 0;
+			}
+		}
+		else
+		{
+			if ((i + 1) % 2 == 0)
+			{
+				lcd_screen_update[lcd_row_counter][lcd_col_counter] = 5;
+				lcd_col_counter++;
+			}
+			else
+			{
+				lcd_screen_update[lcd_row_counter][lcd_col_counter] = 4;
+				lcd_col_counter++;
+			}
+		}
+	}
+	
+	if (last_bar != 0)
+	{
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = last_bar - 1;
+		lcd_col_counter++;
+	}
+	
+	for (int i = full_bars; i < 20; i++)
+	{
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = ' ';
+		lcd_col_counter++;
+	}
+	// FINISH writing voltage number
+	
+	lcd_row_counter++;
+	lcd_col_counter = 0;
+	
+	// START writing current number in format %02d.%dA
+	
+	length = snprintf(NULL, 0, "%02d.%dA ", cur / 100, cur / 10 % 10);
+	str = malloc(length + 1);
+	snprintf(str, length + 1, "%02d.%dA ", cur / 100, cur / 10 % 10);
+	
+	for(unsigned char i = 0; i < length; i++)
+	{
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = str[i];
+		lcd_col_counter++;
+	}
+	
+	free(str);
+	// FINISH writing current number
+	
+	// START writing current bars
+	cur = (cur + 5) / 10; // round to nearest tenth and get tenth
+	
+	full_bars = cur / 25;
+	last_bar  = (cur % 25) / 5;
+	
+	for(int i = 0; i < full_bars; i++)
+	{
+		if (i == full_bars - 1 && cur == (MAX_CURRENT + 5) / 10)
+		{
+			lcd_screen_update[lcd_row_counter][lcd_col_counter] = 6;
+			lcd_col_counter++;
 		}
 		else
 		{
 			if ((i + 1) % 4 == 0)
 			{
-				display_custom_character(5);
+				lcd_screen_update[lcd_row_counter][lcd_col_counter] = 5;
+				lcd_col_counter++;
 			}
 			else
 			{
-				display_custom_character(4);
+				lcd_screen_update[lcd_row_counter][lcd_col_counter] = 4;
+				lcd_col_counter++;
 			}
 		}
 	}
 	
 	if (last_bar != 0)
 	{
-		display_custom_character(last_bar - 1);
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = last_bar - 1;
+		lcd_col_counter++;
 	}
 	
-	setCursor(1, 0);
-	
-	if (voltage > 7000)
+	for (int i = full_bars; i < 20; i++)
 	{
-		voltage = 7000;
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = ' ';
+		lcd_col_counter++;
 	}
+	// FINISH writing current bars
 	
-	length = snprintf(NULL, 0, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
-	str = malloc(length + 1);
-	snprintf(str, length + 1, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
-	lcd_write(str);
-	free(str);
-	
-	voltage = (voltage + 50) / 100; // round to nearest hundred and get hundreds
-	
-	full_bars = voltage / 5;
-	last_bar  = voltage % 5;
-	
-	for(int i = 0; i < full_bars; i++)
+	lcd_update(TRUE);
+}
+
+void lcd_update(bool two_line)
+{
+	unsigned char n = two_line ? 2 : 1;
+	for (unsigned char i = 0; i < n; i++)
 	{
-		if (i >= ((MAX_VOLTAGE + 50) / 100) / 5 - 1 && voltage >= (MAX_VOLTAGE + 50) / 100)
+		for (unsigned char j = 0; j < 20; j++)
 		{
-			display_custom_character(6);
-			if (last_bar != 0)
+			if (lcd_screen[i][j] != lcd_screen_update[i][j])
 			{
-				display_custom_character(6);
-				last_bar = 0;
+				setCursor(i, j);
+				display_character(lcd_screen_update[i][j]);
+				lcd_screen[i][j] = lcd_screen_update[i][j];
 			}
 		}
-		else
-		{
-			if ((i + 1) % 2 == 0)
-			{
-				display_custom_character(5);
-			}
-			else
-			{
-				display_custom_character(4);
-			}
-		}
-	}
-	
-	if (last_bar != 0)
-	{
-		display_custom_character(last_bar - 1);
 	}
 }
 
-void display_voltage(uint16_t voltage)
+void display_set_current()
 {
-	lcd_command(CLEAR_DISPLAY);
-	lcd_command(FUNCTION_SET | 0b0000111000);
+	// START writing current number in format %02d.%dA
+	int length = snprintf(NULL, 0, "SET CUR");
+	char* str = malloc(length + 1);
+	snprintf(str, length + 1, "SET CUR");
 	
-	uint8_t full_bars;
-	uint8_t last_bar;
-	
-	setCursor(1, 0);
-	
-	if (voltage > 7000)
+	for(unsigned char i = 0; i < length; i++)
 	{
-		voltage = 7000;
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = str[i];
+		lcd_col_counter++;
 	}
 	
-	int length = snprintf(NULL, 0, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
-	char* str = malloc(length + 1);
-	snprintf(str, length + 1, "%02d.%dV ", voltage / 100, voltage / 10 % 10);
-	lcd_write(str);
 	free(str);
 	
-	voltage = (voltage + 50) / 100; // round to nearest hundred and get hundreds
+	length = snprintf(NULL, 0, "RENT: ");
+	str = malloc(length + 1);
+	snprintf(str, length + 1, "RENT: ");
 	
-	full_bars = voltage / 5;
-	last_bar  = voltage % 5;
-	
-	for(int i = 0; i < full_bars; i++)
+	for(unsigned char i = 0; i < length; i++)
 	{
-		if (i >= ((MAX_VOLTAGE + 50) / 100) / 5 - 1 && voltage >= (MAX_VOLTAGE + 50) / 100)
-		{
-			display_custom_character(6);
-			if (last_bar != 0)
-			{
-				display_custom_character(6);
-				last_bar = 0;
-			}
-		}
-		else
-		{
-			if ((i + 1) % 2 == 0)
-			{
-				display_custom_character(5);
-			}
-			else
-			{
-				display_custom_character(4);
-			}
-		}
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = str[i];
+		lcd_col_counter++;
 	}
 	
-	if (last_bar != 0)
+	free(str);
+	
+	length = snprintf(NULL, 0, "%02d.%dA", desired_current / 100, desired_current / 10 % 10);
+	str = malloc(length + 1);
+	snprintf(str, length + 1, "%02d.%dA", desired_current / 100, desired_current / 10 % 10);
+	
+	for(unsigned char i = 0; i < length; i++)
 	{
-		display_custom_character(last_bar - 1);
+		lcd_screen_update[lcd_row_counter][lcd_col_counter] = str[i];
+		lcd_col_counter++;
 	}
+	
+	free(str);
+	// FINISH writing current number
+	
+	lcd_col_counter = 0;
+	lcd_row_counter = 0;
+	
+	lcd_update(FALSE);
 }
 
 void display_danger()
 {
 	lcd_command(CLEAR_DISPLAY);
 	lcd_command(FUNCTION_SET | 0b0000111100);
-	lcd_write("  D A ");
-	lcd_write("N G E R");
+	lcd_write(" OVER ");
+	lcd_write("VOLTAGE");
 	lcd_write(" ! ! !");
 }
 
@@ -318,54 +376,54 @@ void handle_encoder()
 {
 	encoder_val_tmp = read_gray_code_from_encoder();
 	
-	current = (current / 10) * 10;
+	desired_current = (desired_current / 10) * 10;
 
 	if(encoder_val != encoder_val_tmp)
 	{
 		if((encoder_val == 0 && encoder_val_tmp == 2))
 		{
-			if (current <= MAX_CURRENT - 10)
+			if (desired_current <= MAX_CURRENT - 10)
 			{
 				if (rtc_counter - rtc_counter_prev < 2)
 				{
-					if (current <= MAX_CURRENT - 100)
+					if (desired_current <= MAX_CURRENT - 100)
 					{
-						current += 100;
+						desired_current += 100;
 						update = TRUE;
 					}
 					else
 					{
-						current += 10;
+						desired_current += 10;
 						update = TRUE;
 					}
 				}
 				else
 				{
-					current += 10;
+					desired_current += 10;
 					update = TRUE;
 				}
 			}
 		}
 		else if((encoder_val == 1 && encoder_val_tmp == 3))
 		{
-			if (current >= 10)
+			if (desired_current >= 10)
 			{
 				if (rtc_counter - rtc_counter_prev < 2)
 				{
-					if (current >= 100)
+					if (desired_current >= 100)
 					{
-						current -= 100;
+						desired_current -= 100;
 						update = TRUE;
 					}
 					else
 					{
-						current -= 10;
+						desired_current -= 10;
 						update = TRUE;
 					}
 				}
 				else
 				{
-					current -= 10;
+					desired_current -= 10;
 					update = TRUE;
 				}
 			}
