@@ -90,8 +90,11 @@ void initialize()
 	desired_current_temp = desired_current;
 }
 
-void display_current_voltage(uint16_t cur, uint16_t vol)
+void display_current_voltage(uint16_t current, uint16_t voltage)
 {
+	uint16_t cur = current;
+	uint16_t vol = voltage;
+	
 	lcd_col_counter = 0;
 	lcd_row_counter = 0;
 	
@@ -213,7 +216,7 @@ void display_current_voltage(uint16_t cur, uint16_t vol)
 		lcd_col_counter++;
 	}
 	
-	for (int i = full_bars; i < 20; i++)
+	for (unsigned char i = full_bars; i < 14; i++)
 	{
 		lcd_screen_update[lcd_row_counter][lcd_col_counter] = ' ';
 		lcd_col_counter++;
